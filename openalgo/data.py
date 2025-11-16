@@ -273,16 +273,15 @@ class DataAPI(BaseAPI):
 
     def instruments(self, *, exchange=None):
         """
-        Download all trading symbols and instruments with exchange-wise filtering.
+        Download all trading symbols and instruments with optional exchange filtering.
 
         This function retrieves instrument data from the OpenAlgo platform and returns
-        it as a pandas DataFrame, allowing you to download all instruments or filter
-        by specific exchange.
+        it as a pandas DataFrame. When no exchange is specified, downloads ALL exchanges.
 
         Parameters:
-        - exchange (str, optional): Filter by exchange. Optional.
+        - exchange (str, optional): Exchange to filter instruments. If not specified, downloads ALL exchanges.
             Supported exchanges: NSE, BSE, NFO, BFO, BCD, CDS, MCX, NSE_INDEX, BSE_INDEX
-            If not specified, downloads ALL exchanges in one shot.
+            Default: None (downloads all exchanges)
 
         Returns:
         pandas.DataFrame or dict:
@@ -302,12 +301,13 @@ class DataAPI(BaseAPI):
         - tick_size: Minimum price movement
 
         Examples:
-            # Download all instruments (all exchanges)
-            df = api.instruments()
-            print(f"Total instruments: {len(df)}")
+            # Download ALL instruments (all exchanges)
+            all_df = api.instruments()
+            print(f"Total instruments across all exchanges: {len(all_df)}")
 
             # Download NSE equities only
             nse_df = api.instruments(exchange="NSE")
+            print(f"Total NSE instruments: {len(nse_df)}")
 
             # Download NFO derivatives
             nfo_df = api.instruments(exchange="NFO")
@@ -327,22 +327,66 @@ class DataAPI(BaseAPI):
                 # Get unique symbols
                 symbols = df['symbol'].unique()
 
+            # Download all and filter by exchange in pandas
+            all_instruments = api.instruments()
+            nse_only = all_instruments[all_instruments['exchange'] == 'NSE']
+            nfo_only = all_instruments[all_instruments['exchange'] == 'NFO']
+
         Notes:
-        - Without exchange parameter: Downloads ALL exchanges (NSE, BSE, NFO, BFO, BCD, CDS, MCX, etc.)
+        - Without exchange parameter: Downloads ALL exchanges (NSE, BSE, NFO, BFO, BCD, CDS, MCX, NSE_INDEX, BSE_INDEX)
+        - With exchange parameter: Downloads only specified exchange
         - Rate limit: 50 requests/second
         - Data updates when master contracts are downloaded
-        - Returns DataFrame for easy filtering, searching, and analysis
+        - Returns pandas DataFrame for easy filtering, searching, and analysis
         """
-        # Build query parameters
-        params = {"apikey": self.api_key}
+        # If no exchange specified, fetch all exchanges and combine
+        if exchange is None:
+            all_exchanges = ['NSE', 'BSE', 'NFO', 'BFO', 'MCX', 'CDS', 'BCD', 'NSE_INDEX', 'BSE_INDEX']
+            all_dfs = []
 
-        if exchange is not None:
-            params["exchange"] = exchange
+            for exch in all_exchanges:
+                params = {
+                    "apikey": self.api_key,
+                    "exchange": exch
+                }
+
+                url = f"{self.base_url}instruments"
+                try:
+                    response = httpx.get(url, params=params, timeout=self.timeout)
+                    result = self._handle_response(response)
+
+                    if result.get('status') == 'success' and 'data' in result:
+                        try:
+                            df = pd.DataFrame(result['data'])
+                            if not df.empty:
+                                all_dfs.append(df)
+                        except Exception:
+                            pass  # Skip exchanges that fail
+                except Exception:
+                    pass  # Skip exchanges that fail
+
+            # Combine all dataframes
+            if all_dfs:
+                combined_df = pd.concat(all_dfs, ignore_index=True)
+                return combined_df
+            else:
+                return {
+                    'status': 'error',
+                    'message': 'Failed to fetch instruments from any exchange',
+                    'error_type': 'no_data'
+                }
+
+        # Fetch single exchange
+        params = {
+            "apikey": self.api_key,
+            "exchange": exchange
+        }
 
         # Make GET request
         url = f"{self.base_url}instruments"
         try:
-            response = httpx.get(url, params=params, headers=self.headers, timeout=self.timeout)
+            # Don't include Content-Type header for GET requests
+            response = httpx.get(url, params=params, timeout=self.timeout)
 
             # Handle JSON response
             result = self._handle_response(response)

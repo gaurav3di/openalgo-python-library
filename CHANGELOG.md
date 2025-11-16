@@ -5,6 +5,68 @@ All notable changes to the OpenAlgo Python Library will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.36] - 2025-01-20
+
+### ✨ New Features
+
+#### Data API - instruments() Function Enhancements
+- **Download ALL Exchanges**: `instruments()` now supports downloading all exchanges when no parameter is specified
+  - `client.instruments()` - Downloads **ALL exchanges** and combines into single DataFrame
+  - Downloads from: NSE, BSE, NFO, BFO, MCX, CDS, BCD, NSE_INDEX, BSE_INDEX
+  - Returns **148,000+ total instruments** across all exchanges
+  - Gracefully handles exchanges that fail or return no data
+  - Backward compatible - `exchange` parameter still works for specific exchanges
+
+### 🐛 Bug Fixes
+
+#### Data API - instruments() Function
+- **Fixed HTTP 400 Error**: Removed `Content-Type: application/json` header from GET request
+  - GET requests don't have a request body, so this header was causing server rejection
+  - Server was returning: `"The browser (or proxy) sent a request that this server could not understand"`
+
+### 📚 Documentation Updates
+- Updated `instruments()` docstring with enhanced usage examples
+- Added documentation for ALL exchanges download feature
+- Updated examples in documentation
+
+### ✅ Verified Functionality
+- **ALL Exchanges**: Successfully retrieves 148,208 instruments from 8 exchanges
+  - NFO: 88,140 instruments (PE, CE, FUT)
+  - MCX: 26,375 instruments
+  - BSE: 12,698 instruments (EQ)
+  - CDS: 11,019 instruments
+  - BFO: 6,754 instruments
+  - NSE: 3,046 instruments (EQ)
+  - NSE_INDEX: 120 instruments
+  - BSE_INDEX: 56 instruments
+- **Specific Exchange**: NSE, NFO, and other exchanges work correctly
+- Returns clean pandas DataFrame with all instrument details
+- CSV export functionality working correctly
+
+### 💡 Usage Examples
+```python
+# Download ALL exchanges (new feature!)
+all_instruments = client.instruments()
+print(f"Total instruments: {len(all_instruments)}")  # 148,208+
+
+# Filter by exchange from combined data
+nse_only = all_instruments[all_instruments['exchange'] == 'NSE']
+nfo_options = all_instruments[
+    (all_instruments['exchange'] == 'NFO') &
+    (all_instruments['instrumenttype'].isin(['CE', 'PE']))
+]
+
+# Download specific exchange (still supported)
+nse_df = client.instruments(exchange="NSE")
+nfo_df = client.instruments(exchange="NFO")
+
+# Filter and analyze
+equities = nse_df[nse_df['instrumenttype'] == 'EQ']
+df.to_csv('nse_instruments.csv', index=False)
+```
+
+---
+
 ## [1.0.35] - 2025-01-20
 
 ### ✨ New Features
