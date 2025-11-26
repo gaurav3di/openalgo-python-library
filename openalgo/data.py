@@ -100,6 +100,45 @@ class DataAPI(BaseAPI):
         }
         return self._make_request("quotes", payload)
 
+    def multiquotes(self, *, symbols):
+        """
+        Get real-time quotes for multiple symbols in a single request.
+
+        Parameters:
+        - symbols (list): List of symbol-exchange pairs. Required.
+            Each item should be a dict with 'symbol' and 'exchange' keys.
+            Example: [{"symbol": "RELIANCE", "exchange": "NSE"}, {"symbol": "TCS", "exchange": "NSE"}]
+
+        Returns:
+        dict: JSON response containing quote data for all requested symbols.
+            On success, returns a dict with 'status': 'success' and quote data for each symbol.
+            On error, returns a dict with 'status': 'error' and an error message.
+
+        Examples:
+            # Get quotes for multiple NSE stocks
+            result = api.multiquotes(symbols=[
+                {"symbol": "RELIANCE", "exchange": "NSE"},
+                {"symbol": "TCS", "exchange": "NSE"},
+                {"symbol": "INFY", "exchange": "NSE"}
+            ])
+
+            # Get quotes across different exchanges
+            result = api.multiquotes(symbols=[
+                {"symbol": "RELIANCE", "exchange": "NSE"},
+                {"symbol": "NIFTY", "exchange": "NSE_INDEX"},
+                {"symbol": "GOLD", "exchange": "MCX"}
+            ])
+
+            if result['status'] == 'success':
+                for quote in result.get('data', []):
+                    print(f"{quote['symbol']}: LTP = {quote.get('ltp')}")
+        """
+        payload = {
+            "apikey": self.api_key,
+            "symbols": symbols
+        }
+        return self._make_request("multiquotes", payload)
+
     def depth(self, *, symbol, exchange):
         """
         Get market depth (order book) for a symbol.
