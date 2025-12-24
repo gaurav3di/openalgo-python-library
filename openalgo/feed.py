@@ -274,6 +274,10 @@ class FeedAPI(BaseAPI):
                                 'close': market_data.get("close", 0),
                                 'ltp': market_data.get("ltp", 0),
                                 'volume': market_data.get("volume", 0),
+                                'last_trade_quantity': market_data.get("last_trade_quantity", 0),
+                                'avg_trade_price': market_data.get("avg_trade_price", 0),
+                                'change': market_data.get("change", 0),
+                                'change_percent': market_data.get("change_percent", 0),
                                 'timestamp': market_data.get("timestamp", int(time.time() * 1000))
                             }
                             
@@ -771,7 +775,11 @@ class FeedAPI(BaseAPI):
                     "low": low,
                     "close": close,
                     "ltp": ltp,
-                    "volume": volume
+                    "volume": volume,
+                    "last_trade_quantity": last_trade_quantity,
+                    "avg_trade_price": avg_trade_price,
+                    "change": change,
+                    "change_percent": change_percent
                 }}}}
         """
         with self.lock:
@@ -806,7 +814,11 @@ class FeedAPI(BaseAPI):
                         "low": data['low'],
                         "close": data['close'],
                         "ltp": data['ltp'],
-                        "volume": data.get('volume', 0)
+                        "volume": data.get('volume', 0),
+                        "last_trade_quantity": data.get('last_trade_quantity', 0),
+                        "avg_trade_price": data.get('avg_trade_price', 0),
+                        "change": data.get('change', 0),
+                        "change_percent": data.get('change_percent', 0)
                     }
             
             return result
@@ -871,37 +883,37 @@ class FeedAPI(BaseAPI):
                     for i, level in enumerate(buy_depth):
                         level_num = str(i + 1)
                         result["depth"][ex][sym]["buyBook"][level_num] = {
-                            "price": str(level.get('price', 0)),
-                            "qty": str(level.get('quantity', 0)),
-                            "orders": str(level.get('orders', 0))
+                            "price": float(level.get('price') or 0),
+                            "qty": int(level.get('quantity') or 0),
+                            "orders": int(level.get('orders') or 0)
                         }
-                    
+
                     # If there are fewer than 5 levels, add empty levels to complete the structure
                     for i in range(len(buy_depth), 5):
                         level_num = str(i + 1)
                         result["depth"][ex][sym]["buyBook"][level_num] = {
-                            "price": "0",
-                            "qty": "0",
-                            "orders": "0"
+                            "price": 0.0,
+                            "qty": 0,
+                            "orders": 0
                         }
-                    
+
                     # Process sell depth book
                     sell_depth = data.get('depth', {}).get('sell', [])
                     for i, level in enumerate(sell_depth):
                         level_num = str(i + 1)
                         result["depth"][ex][sym]["sellBook"][level_num] = {
-                            "price": str(level.get('price', 0)),
-                            "qty": str(level.get('quantity', 0)),
-                            "orders": str(level.get('orders', 0))
+                            "price": float(level.get('price') or 0),
+                            "qty": int(level.get('quantity') or 0),
+                            "orders": int(level.get('orders') or 0)
                         }
-                    
+
                     # If there are fewer than 5 levels, add empty levels to complete the structure
                     for i in range(len(sell_depth), 5):
                         level_num = str(i + 1)
                         result["depth"][ex][sym]["sellBook"][level_num] = {
-                            "price": "0",
-                            "qty": "0",
-                            "orders": "0"
+                            "price": 0.0,
+                            "qty": 0,
+                            "orders": 0
                         }
             
             return result

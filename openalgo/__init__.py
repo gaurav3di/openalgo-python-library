@@ -11,6 +11,7 @@ from .strategy import Strategy
 from .feed import FeedAPI
 from .options import OptionsAPI
 from .telegram import TelegramAPI
+from .utilities import UtilitiesAPI
 from .indicators import ta
 
 # ------------------------------------------------------------------
@@ -26,7 +27,7 @@ _nb.jit = _jit_shim  # monkey-patch once at import time
 nbjit = _jit_shim
 prange = _prange
 
-class api(OrderAPI, DataAPI, AccountAPI, FeedAPI, OptionsAPI, TelegramAPI):
+class api(OrderAPI, DataAPI, AccountAPI, FeedAPI, OptionsAPI, TelegramAPI, UtilitiesAPI):
     """
     OpenAlgo API client class
     """
@@ -86,7 +87,7 @@ class api(OrderAPI, DataAPI, AccountAPI, FeedAPI, OptionsAPI, TelegramAPI):
         self.quotes_callback = None
         self.depth_callback = None
 
-__version__ = "1.0.43"
+__version__ = "1.0.45"
 
 # Export main components for easy access
 __all__ = ['api', 'Strategy', 'ta', 'nbjit', 'prange']
